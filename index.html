@@ -1,0 +1,770 @@
+%%html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOTUS ARCHIVED</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #0d0714;
+      color: #ffffff;
+    }
+
+    /* Full-screen background canvas */
+    #meshCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 2rem;
+      background: rgba(13, 7, 20, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+      gap: 1rem;
+    }
+
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Dropdown Container */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    /* Buttons */
+    .nav-btn {
+      background-color: #1e112a;
+      color: #f97316;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-btn:hover {
+      background-color: #2e1a40;
+      border-color: #a855f7;
+      color: #a855f7;
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+    }
+
+    .leave-btn {
+      background-color: #ef4444;
+      color: #ffffff;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .leave-btn:hover {
+      background-color: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Dropdown Content */
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      padding-top: 8px;
+      min-width: 200px;
+      z-index: 20;
+    }
+
+    .dropdown-menu {
+      background-color: #1e112a;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      padding: 6px;
+    }
+
+    .dropdown-menu a, .dropdown-menu button {
+      color: #f8fafc;
+      padding: 10px 14px;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      border-radius: 4px;
+    }
+
+    .dropdown-menu a:hover, .dropdown-menu button:hover {
+      background: linear-gradient(135deg, #f97316, #a855f7);
+      color: #ffffff;
+    }
+
+    .dropdown:hover .dropdown-content,
+    .dropdown-content:hover {
+      display: block;
+    }
+
+    /* Red Glowing Address Bar */
+    .address-bar-wrapper {
+      position: relative;
+      flex: 1;
+      max-width: 450px;
+      border-radius: 50px;
+      padding: 2px;
+      background: #ef4444;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    .address-bar-inner {
+      display: flex;
+      align-items: center;
+      background: #0d0714;
+      border-radius: 48px;
+      padding: 4px 6px 4px 16px;
+    }
+
+    .address-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 0.9rem;
+      outline: none;
+      padding: 6px 0;
+    }
+
+    .run-btn {
+      background: linear-gradient(135deg, #ef4444, #991b1b);
+      color: #ffffff;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 18px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Bookmarks Bar */
+    .bookmarks-bar {
+      position: relative;
+      z-index: 9;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 2rem;
+      background: rgba(20, 10, 32, 0.75);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+      overflow-x: auto;
+    }
+
+    .bookmarks-list {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+    }
+
+    .bookmark-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #170d24;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bookmark-delete {
+      color: #ef4444;
+      font-weight: bold;
+      margin-left: 4px;
+      cursor: pointer;
+    }
+
+    .add-bm-btn {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px dashed #f97316;
+      color: #f97316;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Modal Overlay & Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: #1e112a;
+      border: 1px solid #a855f7;
+      border-radius: 10px;
+      padding: 1.5rem;
+      width: 420px;
+      max-width: 90%;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+    }
+
+    .modal h2 {
+      font-size: 1.2rem;
+      color: #f97316;
+      margin-bottom: 1rem;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      margin-bottom: 0.3rem;
+    }
+
+    .modal input, .modal textarea {
+      width: 100%;
+      background: #0d0714;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* Center Content */
+    .content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: calc(100vh - 110px);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .content h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      background: linear-gradient(135deg, #f97316 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(249, 115, 22, 0.2), 0 0 40px rgba(168, 85, 247, 0.2);
+    }
+  </style>
+  <!-- Elfsight Platform Script -->
+  <script src="https://elfsightcdn.com/platform.js" async></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="dropdown">
+        <button class="nav-btn">Games &#9662;</button>
+        <div class="dropdown-content">
+          <div class="dropdown-menu">
+            <a href="https://colab.research.google.com/drive/1Tg5CVEv5HBDvUE6NqKD8B4QVKgqVtllj#scrollTo=v0MZ9cgs73u4&fullscreenOutput=true" target="_blank" class="sound-link">All Games</a>
+            <a href="https://colab.research.google.com/drive/1whx2r8XW_OYb-YVPiMVCcSA1eiWVyQLF#scrollTo=zuW8D6LFsWzM&fullscreenOutput=true" target="_blank" class="sound-link">MC Launcher</a>
+            <a href="https://colab.research.google.com/drive/1Tg5CVEv5HBDvUE6NqKD8B4QVKgqVtllj#scrollTo=v0MZ9cgs73u4&fullscreenOutput=true" target="_blank" class="sound-link">gamehub</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="nav-btn">DRIVED &#9662;</button>
+        <div class="dropdown-content">
+          <div class="dropdown-menu">
+            <button id="vusBtn" class="sound-link">VUS</button>
+            <button id="instagramBtn" class="sound-link">Instagrams</button>
+            <button id="tikBtn" class="sound-link">tik</button>
+            <button id="calcBtn" class="sound-link">Calculator</button>
+            <!-- Elfsight Button | Untitled Button -->
+            <div class="elfsight-app-a9e4c027-314f-46f2-b19a-9a09105c5e3e" data-elfsight-app-lazy></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="address-bar-wrapper">
+      <form class="address-bar-inner" id="address-form" onsubmit="executeInput(event)">
+        <input type="text" id="user-input" class="address-input" placeholder="Enter URL or paste HTML/JS code..." autocomplete="off">
+        <button type="submit" class="run-btn">Run</button>
+      </form>
+    </div>
+
+    <div class="nav-right">
+      <a href="https://drive.google.com" target="_blank" class="nav-btn leave-btn sound-link">Leave</a>
+    </div>
+  </nav>
+
+  <div class="bookmarks-bar">
+    <button class="add-bm-btn" id="openModalBtn">+ Add Bookmark</button>
+    <div class="bookmarks-list" id="bookmarksList"></div>
+  </div>
+
+  <!-- Bookmark Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>Add New Bookmark</h2>
+      <label for="bmTitle">Title:</label>
+      <input type="text" id="bmTitle" placeholder="e.g. My Custom Script">
+
+      <label for="bmContent">URL or HTML/JS Code:</label>
+      <textarea id="bmContent" placeholder="https://example.com OR <h1>Hello</h1>"></textarea>
+
+      <div class="modal-actions">
+        <button class="nav-btn" id="cancelModalBtn">Cancel</button>
+        <button class="nav-btn" id="saveBookmarkBtn" style="background: #a855f7; color: #fff; border: none;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="meshCanvas"></canvas>
+
+  <div class="content">
+    <h1>LOTUS ARCHIVED</h1>
+  </div>
+
+  <script>
+    // Address Bar Execution
+    function executeInput(event, rawInput) {
+      if (event) event.preventDefault();
+      let input = rawInput || document.getElementById('user-input').value.trim();
+      if (!input) return;
+
+      const win = window.open('about:blank', '_blank');
+      if (!win) {
+        alert('Please allow pop-ups for this site to work.');
+        return;
+      }
+
+      win.document.title = "Google";
+
+      let isUrl = false;
+      let formattedUrl = input;
+
+      if (!/^https?:\/\//i.test(formattedUrl) && /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i.test(formattedUrl)) {
+        formattedUrl = 'https://' + formattedUrl;
+        isUrl = true;
+      } else if (/^https?:\/\//i.test(formattedUrl)) {
+        isUrl = true;
+      }
+
+      if (isUrl) {
+        win.document.body.style.margin = '0';
+        win.document.body.style.height = '100vh';
+        win.document.body.style.overflow = 'hidden';
+
+        const iframe = win.document.createElement('iframe');
+        iframe.style.border = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.src = formattedUrl;
+        win.document.body.appendChild(iframe);
+      } else {
+        let htmlContent = input;
+        if (!input.includes('<html') && !input.includes('<script') && !input.includes('<div') && !input.includes('<p')) {
+          htmlContent = `<script>${input}<\/script>`;
+        }
+
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Google</title></head>
+          <body>${htmlContent}</body>
+          </html>
+        `);
+        win.document.close();
+      }
+    }
+
+    // DRIVED VUS Handler
+    document.getElementById('vusBtn').addEventListener('click', async () => {
+      try {
+        const hubCode = await fetch(
+          "https://raw.githubusercontent.com/Cra-Z-Gaming/VUS/main/index.html?v=" + Date.now()
+        ).then(r => r.text());
+
+        const win = window.open("about:blank", "_blank");
+        if (win) {
+          win.document.open();
+          win.document.write(hubCode);
+          win.document.close();
+        }
+      } catch (e) {
+        alert("Failed to fetch updates.");
+      }
+    });
+
+    // DRIVED Instagrams Handler
+    document.getElementById('instagramBtn').addEventListener('click', () => {
+      const win = window.open("about:blank", "_blank");
+      if (win) {
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Instagram Feed</title>
+            <style>
+              body {
+                background-color: #0d0714;
+                color: #ffffff;
+                margin: 0;
+                padding: 20px;
+                font-family: system-ui, sans-serif;
+              }
+            </style>
+          </head>
+          <body>
+            <!-- Elfsight Instagram Feed | Untitled Instagram Feed -->
+            <script src="https://elfsightcdn.com/platform.js" async><\/script>
+            <div class="elfsight-app-cd127be9-ecf2-4edd-993f-df165ec9f0e5" data-elfsight-app-lazy></div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      } else {
+        alert("Popup blocked! Please allow popups in your browser settings.");
+      }
+    });
+
+    // DRIVED TikTok Handler
+    document.getElementById('tikBtn').addEventListener('click', () => {
+      const win = window.open("about:blank", "_blank");
+      if (win) {
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>TikTok Feed</title>
+            <style>
+              body {
+                background-color: #0d0714;
+                color: #ffffff;
+                margin: 0;
+                padding: 20px;
+                font-family: system-ui, sans-serif;
+              }
+            </style>
+          </head>
+          <body>
+            <!-- Elfsight TikTok Feed | Untitled TikTok Feed -->
+            <script src="https://elfsightcdn.com/platform.js" async><\/script>
+            <div class="elfsight-app-b7fba277-a2c0-4179-bb38-b5d45a191944" data-elfsight-app-lazy></div>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      } else {
+        alert("Popup blocked! Please allow popups in your browser settings.");
+      }
+    });
+
+    // DRIVED Calculator Handler
+    document.getElementById('calcBtn').addEventListener('click', () => {
+      const win = window.open("about:blank", "_blank");
+      if (win) {
+        win.document.open();
+        win.document.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Calculator</title>
+            <style>
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                background-color: #0d0714;
+                color: #ffffff;
+                font-family: system-ui, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+              }
+              .calculator {
+                background: #1e112a;
+                border: 1px solid #a855f7;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+                width: 320px;
+              }
+              #display {
+                width: 100%;
+                height: 60px;
+                background: #0d0714;
+                border: 1px solid rgba(168, 85, 247, 0.3);
+                border-radius: 8px;
+                color: #ffffff;
+                font-size: 2rem;
+                text-align: right;
+                padding: 10px;
+                margin-bottom: 20px;
+                outline: none;
+              }
+              .buttons {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+              }
+              button {
+                background: #2e1a40;
+                color: #ffffff;
+                border: 1px solid rgba(249, 115, 22, 0.3);
+                border-radius: 8px;
+                padding: 18px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.2s;
+              }
+              button:hover {
+                background: #3d2354;
+                border-color: #a855f7;
+              }
+              button.op {
+                color: #f97316;
+              }
+              button.equal {
+                background: linear-gradient(135deg, #f97316, #a855f7);
+                grid-column: span 2;
+              }
+              button.clear {
+                color: #ef4444;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="calculator">
+              <input type="text" id="display" readonly value="0">
+              <div class="buttons">
+                <button class="clear" onclick="clearDisplay()">C</button>
+                <button onclick="deleteLast()">DEL</button>
+                <button class="op" onclick="appendOp('/')">&divide;</button>
+                <button class="op" onclick="appendOp('*')">&times;</button>
+                <button onclick="appendNum('7')">7</button>
+                <button onclick="appendNum('8')">8</button>
+                <button onclick="appendNum('9')">9</button>
+                <button class="op" onclick="appendOp('-')">-</button>
+                <button onclick="appendNum('4')">4</button>
+                <button onclick="appendNum('5')">5</button>
+                <button onclick="appendNum('6')">6</button>
+                <button class="op" onclick="appendOp('+')">+</button>
+                <button onclick="appendNum('1')">1</button>
+                <button onclick="appendNum('2')">2</button>
+                <button onclick="appendNum('3')">3</button>
+                <button onclick="appendNum('.')">.</button>
+                <button onclick="appendNum('0')">0</button>
+                <button class="equal" onclick="calculate()">=</button>
+              </div>
+            </div>
+            <script>
+              const display = document.getElementById('display');
+              function clearDisplay() { display.value = '0'; }
+              function deleteLast() {
+                display.value = display.value.slice(0, -1);
+                if (display.value === '') display.value = '0';
+              }
+              function appendNum(num) {
+                if (display.value === '0' && num !== '.') {
+                  display.value = num;
+                } else {
+                  display.value += num;
+                }
+              }
+              function appendOp(op) {
+                const last = display.value.slice(-1);
+                if (['+', '-', '*', '/'].includes(last)) {
+                  display.value = display.value.slice(0, -1) + op;
+                } else {
+                  display.value += op;
+                }
+              }
+              function calculate() {
+                try {
+                  display.value = Function('"use strict"; return (' + display.value + ')')();
+                } catch (e) {
+                  display.value = 'Error';
+                }
+              }
+            <\/script>
+          </body>
+          </html>
+        `);
+        win.document.close();
+      } else {
+        alert("Popup blocked! Please allow popups in your browser settings.");
+      }
+    });
+
+    // Bookmarks Handling
+    let bookmarks = JSON.parse(localStorage.getItem('lotus_bookmarks')) || [];
+    const bookmarksList = document.getElementById('bookmarksList');
+    const modalOverlay = document.getElementById('modalOverlay');
+
+    function renderBookmarks() {
+      bookmarksList.innerHTML = '';
+      bookmarks.forEach((bm, index) => {
+        const item = document.createElement('div');
+        item.className = 'bookmark-item';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = bm.title;
+        titleSpan.addEventListener('click', () => executeInput(null, bm.content));
+
+        const delBtn = document.createElement('span');
+        delBtn.className = 'bookmark-delete';
+        delBtn.textContent = '×';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          bookmarks.splice(index, 1);
+          localStorage.setItem('lotus_bookmarks', JSON.stringify(bookmarks));
+          renderBookmarks();
+        });
+
+        item.appendChild(titleSpan);
+        item.appendChild(delBtn);
+        bookmarksList.appendChild(item);
+      });
+    }
+
+    document.getElementById('openModalBtn').addEventListener('click', () => modalOverlay.style.display = 'flex');
+    document.getElementById('cancelModalBtn').addEventListener('click', () => modalOverlay.style.display = 'none');
+
+    document.getElementById('saveBookmarkBtn').addEventListener('click', () => {
+      const title = document.getElementById('bmTitle').value.trim();
+      const content = document.getElementById('bmContent').value.trim();
+
+      if (title && content) {
+        bookmarks.push({ title, content });
+        localStorage.setItem('lotus_bookmarks', JSON.stringify(bookmarks));
+        renderBookmarks();
+        document.getElementById('bmTitle').value = '';
+        document.getElementById('bmContent').value = '';
+        modalOverlay.style.display = 'none';
+      }
+    });
+
+    renderBookmarks();
+
+    // Automated Wavy Canvas Mesh Background
+    const canvas = document.getElementById('meshCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    let step = 0;
+    function animateMesh() {
+      ctx.clearRect(0, 0, width, height);
+      step += 0.02;
+
+      ctx.lineWidth = 1;
+      const spacing = 40;
+
+      // Draw horizontal wavy lines
+      for (let y = 0; y < height; y += spacing) {
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 10) {
+          const waveY = y + Math.sin(x * 0.005 + step + y * 0.01) * 15;
+          if (x === 0) ctx.moveTo(x, waveY);
+          else ctx.lineTo(x, waveY);
+        }
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.12)';
+        ctx.stroke();
+      }
+
+      // Draw vertical wavy lines
+      for (let x = 0; x < width; x += spacing) {
+        ctx.beginPath();
+        for (let y = 0; y < height; y += 10) {
+          const waveX = x + Math.cos(y * 0.005 + step + x * 0.01) * 15;
+          if (y === 0) ctx.moveTo(waveX, y);
+          else ctx.lineTo(waveX, y);
+        }
+        ctx.strokeStyle = 'rgba(249, 115, 22, 0.08)';
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(animateMesh);
+    }
+
+    animateMesh();
+  </script>
+
+</body>
+</html>
